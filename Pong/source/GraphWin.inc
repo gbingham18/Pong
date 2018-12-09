@@ -241,6 +241,7 @@ WM_PAINT            =  000Fh       ; paint message
 WM_TIMER            =  0113h    ; timer fires
 WM_KEYDOWN			=  0100h	;keyboard input
 
+
 COMMENT @
 MB_ICONERROR           =  010h	; stop sign icon
 MB_ICONHAND            = 10h

@@ -22,6 +22,11 @@ PopupTitle BYTE "Popup Window",0
 PopupText  BYTE "This window was activated by a "
 	       BYTE "WM_LBUTTONDOWN message",0
 
+PopupTitle2 BYTE "Popup Window",0
+PopupText2  BYTE "This window was activated by a "
+	       BYTE "VK_DOWN message",0
+
+
 GreetTitle BYTE "Main Window Active",0
 GreetText  BYTE "This window is shown immediately after "
 	       BYTE "CreateWindow and UpdateWindow are called.",0
@@ -38,8 +43,9 @@ msg	     MSGStruct <>
 winRect   RECT <>
 
 ;Structs
-rc RECT <20,300,30,500>
-rc2 RECT <1890,300,1900,500>
+rc RECT <20,350,30,550>
+rc2 RECT <1890,350,1900,550>
+ball RECT <950, 450, 975, 475>
 ps PAINTSTRUCT <?>
 
 ;Handles
@@ -52,12 +58,13 @@ colorref DWORD ?
 ;Regions
 leftPaddle DWORD ?
 rightPaddle DWORD ?
+ballRegn DWORD ?
 
 ;Directions
-ballxdir SDWORD 3    ; direction of box in x
-ballydir SDWORD 5    ; direction of box in y
-LPaddledir SDWORD 5		 ; direction of left paddle
-RPaddledir SDWORD 5		 ; direction of right paddle
+ballxdir SDWORD 10    ; direction of box in x
+ballydir SDWORD 10    ; direction of box in y
+LPaddledir SDWORD 20		 ; direction of left paddle
+RPaddledir SDWORD 20		 ; direction of right paddle
 
 ; Define the Application's Window class structure.
 MainWin WNDCLASS <NULL,WinProc,NULL,NULL,NULL,NULL,NULL, \
@@ -140,6 +147,23 @@ DrawRightPaddle PROC
 		ret
 DrawRightPaddle ENDP
 
+DrawBall PROC
+		INVOKE CreateRectRgn, ball.left, ball.top, ball.right, ball.bottom
+		mov ballRegn, eax
+		INVOKE FillRgn, hdc, ballRegn, hbrush
+		ret
+DrawBall ENDP
+
+MoveBall PROC
+		mov ebx, ballxdir
+		add ball.left, ebx
+		add ball.right, ebx
+		mov ebx, ballydir
+		add ball.top, ebx
+		add ball.bottom, ebx
+		ret
+MoveBall ENDP
+
 ;-----------------------------------------------------
 WinProc PROC,
 	hWnd:DWORD, localMsg:DWORD, wParam:DWORD, lParam:DWORD
@@ -153,7 +177,22 @@ WinProc PROC,
 	  INVOKE MessageBox, hWnd, ADDR PopupText,
 	    ADDR PopupTitle, MB_OK
 	  jmp WinProcExit
-	;.ELSEIF eax == WM_KEYDOWN		;keyboard?
+	.ELSEIF wParam == VK_UP		;keyboard?
+		mov ebx, RPaddledir
+		sub rc2.top, ebx
+		sub rc2.bottom, ebx
+	.ELSEIF wParam == VK_DOWN		;keyboard?
+		mov ebx, RPaddledir
+		add rc2.top, ebx
+		add rc2.bottom, ebx
+	.ELSEIF wParam == 57h		;keyboard?
+		mov ebx, RPaddledir
+		sub rc.top, ebx
+		sub rc.bottom, ebx
+	.ELSEIF wParam == 53h		;keyboard?
+		mov ebx, RPaddledir
+		add rc.top, ebx
+		add rc.bottom, ebx
 	.ELSEIF eax == WM_CREATE		; create window?
 	  INVOKE MessageBox, hWnd, ADDR AppLoadMsgText,
 	    ADDR AppLoadMsgTitle, MB_OK
@@ -173,9 +212,12 @@ WinProc PROC,
 		mov colorref, 00000000h
 		INVOKE CreateSolidBrush, colorref
 		mov hbrush, eax
-
+		
 		call DrawLeftPaddle
 		call DrawRightPaddle
+		
+		call DrawBall
+		call MoveBall
 
 	  ; output text
 	  ;INVOKE DrawTextA, hdc, ADDR HelloStr, -1, ADDR rc, DTFLAGS 
